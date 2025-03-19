@@ -1,0 +1,1229 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>EGOT Tracker</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background-color: #f5f5f5;
+    }
+    h1 {
+      text-align: center;
+      color: #333;
+    }
+    .artist {
+      border: 1px solid #ccc;
+      padding: 15px;
+      margin: 15px auto;
+      max-width: 500px;
+      background-color: #fff;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      transition: transform 0.2s, box-shadow 0.2s;
+      position: relative; /* For checkbox positioning */
+    }
+    .artist:hover {
+      transform: scale(1.02);
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    }
+    .artist h2 {
+      margin: 0 0 10px 0;
+      color: #2c3e50;
+      font-size: 24px;
+      font-weight: bold;
+      display: inline;
+    }
+    .artist p {
+      margin: 5px 0;
+      color: #555;
+    }
+    .progress {
+      width: 200px;
+      height: 20px;
+      background: #e0e0e0;
+      border-radius: 5px;
+      overflow: hidden;
+      position: relative;
+    }
+    .fill {
+      height: 100%;
+      background: #4caf50;
+      border-radius: 5px;
+    }
+    #searchBar {
+      width: 50%;
+      padding: 10px;
+      margin: 10px auto;
+      display: block;
+      font-size: 16px;
+      border: 2px solid #ccc;
+      border-radius: 5px;
+    }
+    #controls {
+      text-align: center;
+      margin: 20px 0;
+    }
+    #controls button {
+      padding: 8px 16px;
+      margin: 0 5px;
+      background-color: #4caf50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    #controls button:hover {
+      background-color: #45a049;
+    }
+    #filters {
+      margin-top: 10px;
+    }
+    #filters label {
+      margin: 0 10px;
+    }
+    .tooltip {
+      display: none;
+      position: absolute;
+      background-color: #333;
+      color: white;
+      padding: 5px 10px;
+      border-radius: 5px;
+      font-size: 12px;
+      top: -40px;
+      left: 50%;
+      transform: translateX(-50%);
+      white-space: nowrap;
+    }
+    .progress:hover .tooltip {
+      display: block;
+    }
+    .share-btn {
+      padding: 5px 10px;
+      background-color: #1da1f2; /* Twitter blue */
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    .share-btn:hover {
+      background-color: #0d95e8;
+    }
+    .compare-checkbox {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+    }
+    #compareModal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      justify-content: center;
+      align-items: center;
+    }
+    .modal-content {
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      max-width: 600px;
+      width: 90%;
+      position: relative;
+    }
+    .close-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      font-size: 20px;
+      cursor: pointer;
+    }
+    .comparison {
+      display: flex;
+      justify-content: space-between;
+    }
+    .comparison div {
+      width: 45%;
+    }
+  </style>
+</head>
+<body>
+  <h1>EGOT Tracker</h1>
+  <input type="text" id="searchBar" placeholder="Search for an artist..." onkeyup="searchArtists()">
+  
+  <div id="controls">
+    <button onclick="sortByProgress()">Sort by Progress</button>
+    <button onclick="sortByName()">Sort by Name</button>
+    <button onclick="resetOrder()">Reset Order</button>
+    <button id="compareBtn" onclick="compareArtists()" disabled>Compare</button>
+    <div id="filters">
+      <label><input type="checkbox" id="emmyFilter" onchange="filterArtists()"> Emmy</label>
+      <label><input type="checkbox" id="grammyFilter" onchange="filterArtists()"> Grammy</label>
+      <label><input type="checkbox" id="oscarFilter" onchange="filterArtists()"> Oscar</label>
+      <label><input type="checkbox" id="tonyFilter" onchange="filterArtists()"> Tony</label>
+    </div>
+  </div>
+
+  <!-- Modal for Comparison -->
+  <div id="compareModal">
+    <div class="modal-content">
+      <span class="close-btn" onclick="document.getElementById('compareModal').style.display='none'">&times;</span>
+      <h2>Artist Comparison</h2>
+      <div id="comparisonContent" class="comparison"></div>
+    </div>
+  </div>
+
+  <!-- Full 145-Artist List with Tooltips, Share Buttons, and Checkboxes -->
+  <div class="artist" data-original-order="0">
+    <h2>John Legend</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: Emmy, Grammy, Oscar, Tony (4/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 100%;"></div>
+      <span class="tooltip">Emmy: 2018, Grammy: 2006, Oscar: 2015, Tony: 2017</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('John Legend', 'Awards: Emmy, Grammy, Oscar, Tony (4/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="1">
+    <h2>Rita Moreno</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: Emmy, Grammy, Oscar, Tony (4/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 100%;"></div>
+      <span class="tooltip">Emmy: 1977, Grammy: 1972, Oscar: 1961, Tony: 1975</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Rita Moreno', 'Awards: Emmy, Grammy, Oscar, Tony (4/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="2">
+    <h2>Viola Davis</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: Emmy, Grammy, Oscar, Tony (4/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 100%;"></div>
+      <span class="tooltip">Emmy: 2015, Grammy: 2023, Oscar: 2016, Tony: 2010</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Viola Davis', 'Awards: Emmy, Grammy, Oscar, Tony (4/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="3">
+    <h2>Elton John</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: Emmy, Grammy, Oscar, Tony (4/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 100%;"></div>
+      <span class="tooltip">Emmy: 2024, Grammy: 1987, Oscar: 1994, Tony: 2000</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Elton John', 'Awards: Emmy, Grammy, OscarTony (4/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="4">
+    <h2>Lin-Manuel Miranda</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: Emmy, Grammy, Tony (3/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 75%;"></div>
+      <span class="tooltip">Emmy: 2014, Grammy: 2016, Tony: 2016</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Lin-Manuel Miranda', 'Awards: Emmy, Grammy, Tony (3/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="5">
+    <h2>Cher</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: Emmy, Grammy, Oscar (3/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 75%;"></div>
+      <span class="tooltip">Emmy: 2003, Grammy: 2000, Oscar: 1987</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Cher', 'Awards: Emmy, Grammy, Oscar (3/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="6">
+    <h2>Adele</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: Emmy, Grammy, Oscar (3/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 75%;"></div>
+      <span class="tooltip">Emmy: 2022, Grammy: 2012, Oscar: 2013</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Adele', 'Awards: Emmy, Grammy, Oscar (3/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="7">
+    <h2>Cynthia Erivo</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: Emmy, Grammy, Tony (3/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 75%;"></div>
+      <span class="tooltip">Emmy: 2017, Grammy: 2017, Tony: 2016</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Cynthia Erivo', 'Awards: Emmy, Grammy, Tony (3/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="8">
+    <h2>Nicki Minaj</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: None (0/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 0%;"></div>
+      <span class="tooltip">No wins yet</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Nicki Minaj', 'Awards: None (0/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="9">
+    <h2>Rihanna</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: Grammy (1/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 25%;"></div>
+      <span class="tooltip">Grammy: 2010</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Rihanna', 'Awards: Grammy (1/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="10">
+    <h2>Bruno Mars</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: Grammy (1/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 25%;"></div>
+      <span class="tooltip">Grammy: 2018</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Bruno Mars', 'Awards: Grammy (1/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="11">
+    <h2>The Weeknd</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: Grammy (1/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 25%;"></div>
+      <span class="tooltip">Grammy: 2016</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('The Weeknd', 'Awards: Grammy (1/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="12">
+    <h2>Timothée Chalamet</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: None (0/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 0%;"></div>
+      <span class="tooltip">No wins yet</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Timothée Chalamet', 'Awards: None (0/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="13">
+    <h2>Beyoncé</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: Grammy (1/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 25%;"></div>
+      <span class="tooltip">Grammy: 2001</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Beyoncé', 'Awards: Grammy (1/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="14">
+    <h2>Billie Eilish</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: Grammy, Oscar (2/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 50%;"></div>
+      <span class="tooltip">Grammy: 2020, Oscar: 2022</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Billie Eilish', 'Awards: Grammy, Oscar (2/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="15">
+    <h2>Lady Gaga</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: Grammy, Oscar (2/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 50%;"></div>
+      <span class="tooltip">Grammy: 2019, Oscar: 2019</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Lady Gaga', 'Awards: Grammy, Oscar (2/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="16">
+    <h2>Katy Perry</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: None (0/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 0%;"></div>
+      <span class="tooltip">No wins yet</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Katy Perry', 'Awards: None (0/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="17">
+    <h2>Ariana Grande</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: Grammy (1/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 25%;"></div>
+      <span class="tooltip">Grammy: 2019</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Ariana Grande', 'Awards: Grammy (1/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="18">
+    <h2>Tom Cruise</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: None (0/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 0%;"></div>
+      <span class="tooltip">No wins yet</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Tom Cruise', 'Awards: None (0/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="19">
+    <h2>Johnny Depp</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: None (0/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 0%;"></div>
+      <span class="tooltip">No wins yet</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Johnny Depp', 'Awards: None (0/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="20">
+    <h2>Matt Damon</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: Oscar (1/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 25%;"></div>
+      <span class="tooltip">Oscar: 1998</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Matt Damon', 'Awards: Oscar (1/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="21">
+    <h2>Jennifer Aniston</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: Emmy (1/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 25%;"></div>
+      <span class="tooltip">Emmy: 2002</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Jennifer Aniston', 'Awards: Emmy (1/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="22">
+    <h2>Brad Pitt</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: Oscar (2/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 50%;"></div>
+      <span class="tooltip">Oscar: 2020, 2014</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Brad Pitt', 'Awards: Oscar (2/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="23">
+    <h2>Cardi B</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: Grammy (1/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 25%;"></div>
+      <span class="tooltip">Grammy: 2019</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Cardi B', 'Awards: Grammy (1/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="24">
+    <h2>Will Smith</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: Oscar (1/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 25%;"></div>
+      <span class="tooltip">Oscar: 2022</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Will Smith', 'Awards: Oscar (1/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="25">
+    <h2>Angelina Jolie</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: Oscar (1/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 25%;"></div>
+      <span class="tooltip">Oscar: 2000</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Angelina Jolie', 'Awards: Oscar (1/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="26">
+    <h2>Tom Hanks</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: Oscar, Emmy (2/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 50%;"></div>
+      <span class="tooltip">Oscar: 1994, Emmy: 2002</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Tom Hanks', 'Awards: Oscar, Emmy (2/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="27">
+    <h2>Scarlett Johansson</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: None (0/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 0%;"></div>
+      <span class="tooltip">No wins yet</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Scarlett Johansson', 'Awards: None (0/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="28">
+    <h2>Taylor Swift</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: Grammy (1/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 25%;"></div>
+      <span class="tooltip">Grammy: 2010</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Taylor Swift', 'Awards: Grammy (1/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="29">
+    <h2>Adam Sandler</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: None (0/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 0%;"></div>
+      <span class="tooltip">No wins yet</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Adam Sandler', 'Awards: None (0/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="30">
+    <h2>Chris Pratt</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: None (0/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 0%;"></div>
+      <span class="tooltip">No wins yet</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Chris Pratt', 'Awards: None (0/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="31">
+    <h2>Whoopi Goldberg</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: Emmy, Grammy, Oscar, Tony (4/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 100%;"></div>
+      <span class="tooltip">Emmy: 2002, Grammy: 1986, Oscar: 1991, Tony: 2002</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Whoopi Goldberg', 'Awards: Emmy, Grammy, Oscar, Tony (4/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="32">
+    <h2>Mel Brooks</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: Emmy, Grammy, Oscar, Tony (4/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 100%;"></div>
+      <span class="tooltip">Emmy: 1967, Grammy: 1998, Oscar: 1968, Tony: 2001</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Mel Brooks', 'Awards: Emmy, Grammy, Oscar, Tony (4/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="33">
+    <h2>Audrey Hepburn</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: Emmy, Grammy, Oscar, Tony (4/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 100%;"></div>
+      <span class="tooltip">Emmy: 1993, Grammy: 1994, Oscar: 1953, Tony: 1954</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Audrey Hepburn', 'Awards: Emmy, Grammy, Oscar, Tony (4/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="34">
+    <h2>Andrew Lloyd Webber</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: Emmy, Grammy, Oscar, Tony (4/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 100%;"></div>
+      <span class="tooltip">Emmy: 2018, Grammy: 1980, Oscar: 1996, Tony: 1980</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Andrew Lloyd Webber', 'Awards: Emmy, Grammy, Oscar, Tony (4/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="35">
+    <h2>Hugh Jackman</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: Emmy, Grammy, Tony (3/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 75%;"></div>
+      <span class="tooltip">Emmy: 2005, Grammy: 2019, Tony: 2004</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Hugh Jackman', 'Awards: Emmy, Grammy, Tony (3/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="36">
+    <h2>Bette Midler</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: Emmy, Grammy, Tony (3/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 75%;"></div>
+      <span class="tooltip">Emmy: 1992, Grammy: 1973, Tony: 2017</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Bette Midler', 'Awards: Emmy, Grammy, Tony (3/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="37">
+    <h2>Barbra Streisand</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: Emmy, Grammy, Oscar (2/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 50%;"></div>
+      <span class="tooltip">Emmy: 1965, Grammy: 1964, Oscar: 1969</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Barbra Streisand', 'Awards: Emmy, Grammy, Oscar (2/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="38">
+    <h2>Jay-Z</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: Grammy (1/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 25%;"></div>
+      <span class="tooltip">Grammy: 1999</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Jay-Z', 'Awards: Grammy (1/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="39">
+    <h2>Drake</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: Grammy (1/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 25%;"></div>
+      <span class="tooltip">Grammy: 2017</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Drake', 'Awards: Grammy (1/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="40">
+    <h2>Denzel Washington</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: Oscar, Tony (2/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 50%;"></div>
+      <span class="tooltip">Oscar: 2002, Tony: 2010</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Denzel Washington', 'Awards: Oscar, Tony (2/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="41">
+    <h2>Meryl Streep</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: Oscar, Emmy (2/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 50%;"></div>
+      <span class="tooltip">Oscar: 1980, Emmy: 2004</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Meryl Streep', 'Awards: Oscar, Emmy (2/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="42">
+    <h2>Leonardo DiCaprio</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: Oscar (1/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 25%;"></div>
+      <span class="tooltip">Oscar: 2016</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Leonardo DiCaprio', 'Awards: Oscar (1/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="43">
+    <h2>Zendaya</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: Emmy (1/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 25%;"></div>
+      <span class="tooltip">Emmy: 2022</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Zendaya', 'Awards: Emmy (1/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="44">
+    <h2>Harry Styles</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: Grammy (1/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 25%;"></div>
+      <span class="tooltip">Grammy: 2023</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Harry Styles', 'Awards: Grammy (1/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="45">
+    <h2>SZA</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: Grammy (1/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 25%;"></div>
+      <span class="tooltip">Grammy: 2024</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('SZA', 'Awards: Grammy (1/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="46">
+    <h2>Oprah Winfrey</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: Emmy (1/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 25%;"></div>
+      <span class="tooltip">Emmy: 1987</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Oprah Winfrey', 'Awards: Emmy (1/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="47">
+    <h2>George Clooney</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: Oscar (1/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 25%;"></div>
+      <span class="tooltip">Oscar: 2006</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('George Clooney', 'Awards: Oscar (1/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="48">
+    <h2>Julia Roberts</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: Oscar (1/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 25%;"></div>
+      <span class="tooltip">Oscar: 2001</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Julia Roberts', 'Awards: Oscar (1/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="49">
+    <h2>Robert De Niro</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: Oscar (2/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 50%;"></div>
+      <span class="tooltip">Oscar: 1975, 1981</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Robert De Niro', 'Awards: Oscar (2/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="50">
+    <h2>Natalie Portman</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: Oscar (1/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 25%;"></div>
+      <span class="tooltip">Oscar: 2011</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Natalie Portman', 'Awards: Oscar (1/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="51">
+    <h2>Eminem</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: Oscar, Grammy (2/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 50%;"></div>
+      <span class="tooltip">Oscar: 2003, Grammy: 2000</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Eminem', 'Awards: Oscar, Grammy (2/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="52">
+    <h2>Justin Timberlake</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: Grammy (1/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 25%;"></div>
+      <span class="tooltip">Grammy: 2004</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Justin Timberlake', 'Awards: Grammy (1/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="53">
+    <h2>Kanye West</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: Grammy (1/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 25%;"></div>
+      <span class="tooltip">Grammy: 2005</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Kanye West', 'Awards: Grammy (1/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="54">
+    <h2>Alicia Keys</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: Grammy (1/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 25%;"></div>
+      <span class="tooltip">Grammy: 2002</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Alicia Keys', 'Awards: Grammy (1/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="55">
+    <h2>Pharrell Williams</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: Grammy (1/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 25%;"></div>
+      <span class="tooltip">Grammy: 2004</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Pharrell Williams', 'Awards: Grammy (1/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="56">
+    <h2>Common</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: Emmy, Grammy, Oscar (3/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 75%;"></div>
+      <span class="tooltip">Emmy: 2017, Grammy: 2003, Oscar: 2015</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Common', 'Awards: Emmy, Grammy, Oscar (3/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="57">
+    <h2>Tracy Morgan</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: Emmy (1/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 25%;"></div>
+      <span class="tooltip">Emmy: 2016</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Tracy Morgan', 'Awards: Emmy (1/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="58">
+    <h2>Eddie Murphy</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: Emmy (1/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 25%;"></div>
+      <span class="tooltip">Emmy: 2020</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Eddie Murphy', 'Awards: Emmy (1/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="59">
+    <h2>Kevin Hart</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: None (0/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 0%;"></div>
+      <span class="tooltip">No wins yet</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Kevin Hart', 'Awards: None (0/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="60">
+    <h2>Chris Pine</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: None (0/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 0%;"></div>
+      <span class="tooltip">No wins yet</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Chris Pine', 'Awards: None (0/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="61">
+    <h2>Ryan Gosling</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: None (0/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 0%;"></div>
+      <span class="tooltip">No wins yet</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Ryan Gosling', 'Awards: None (0/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="62">
+    <h2>Anne Hathaway</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: Oscar (1/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 25%;"></div>
+      <span class="tooltip">Oscar: 2013</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Anne Hathaway', 'Awards: Oscar (1/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="63">
+    <h2>Sandra Bullock</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: Oscar (1/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 25%;"></div>
+      <span class="tooltip">Oscar: 2010</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Sandra Bullock', 'Awards: Oscar (1/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="64">
+    <h2>Halle Berry</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: Oscar (1/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 25%;"></div>
+      <span class="tooltip">Oscar: 2002</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Halle Berry', 'Awards: Oscar (1/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="65">
+    <h2>Jamie Foxx</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: Oscar, Grammy (2/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 50%;"></div>
+      <span class="tooltip">Oscar: 2005, Grammy: 2006</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Jamie Foxx', 'Awards: Oscar, Grammy (2/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="66">
+    <h2>Queen Latifah</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: Grammy (1/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 25%;"></div>
+      <span class="tooltip">Grammy: 1995</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Queen Latifah', 'Awards: Grammy (1/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="67">
+    <h2>LL Cool J</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: Grammy (1/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 25%;"></div>
+      <span class="tooltip">Grammy: 1992</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('LL Cool J', 'Awards: Grammy (1/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="68">
+    <h2>Ice Cube</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: None (0/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 0%;"></div>
+      <span class="tooltip">No wins yet</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Ice Cube', 'Awards: None (0/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="69">
+    <h2>Will Ferrell</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: Emmy (1/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 25%;"></div>
+      <span class="tooltip">Emmy: 2001</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Will Ferrell', 'Awards: Emmy (1/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="70">
+    <h2>Tina Fey</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: Emmy (1/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 25%;"></div>
+      <span class="tooltip">Emmy: 2007</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Tina Fey', 'Awards: Emmy (1/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="71">
+    <h2>Amy Poehler</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: Emmy (1/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 25%;"></div>
+      <span class="tooltip">Emmy: 2016</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Amy Poehler', 'Awards: Emmy (1/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="72">
+    <h2>Kristen Wiig</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: Emmy (1/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 25%;"></div>
+      <span class="tooltip">Emmy: 2017</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Kristen Wiig', 'Awards: Emmy (1/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="73">
+    <h2>Steve Carell</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: Emmy (1/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 25%;"></div>
+      <span class="tooltip">Emmy: 2006</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Steve Carell', 'Awards: Emmy (1/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="74">
+    <h2>Jim Carrey</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: None (0/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 0%;"></div>
+      <span class="tooltip">No wins yet</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Jim Carrey', 'Awards: None (0/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="75">
+    <h2>Robin Williams</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: Emmy, Grammy (2/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 50%;"></div>
+      <span class="tooltip">Emmy: 1987, Grammy: 1980</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Robin Williams', 'Awards: Emmy, Grammy (2/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="76">
+    <h2>Ellen DeGeneres</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: Emmy (1/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 25%;"></div>
+      <span class="tooltip">Emmy: 1997</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Ellen DeGeneres', 'Awards: Emmy (1/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="77">
+    <h2>Jimmy Fallon</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: Emmy (1/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 25%;"></div>
+      <span class="tooltip">Emmy: 2010</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Jimmy Fallon', 'Awards: Emmy (1/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="78">
+    <h2>Stephen Colbert</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: Emmy (1/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 25%;"></div>
+      <span class="tooltip">Emmy: 2006</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Stephen Colbert', 'Awards: Emmy (1/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="79">
+    <h2>Jon Stewart</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: Emmy (1/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 25%;"></div>
+      <span class="tooltip">Emmy: 2001</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Jon Stewart', 'Awards: Emmy (1/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="80">
+    <h2>David Letterman</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: Emmy (1/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 25%;"></div>
+      <span class="tooltip">Emmy: 1984</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('David Letterman', 'Awards: Emmy (1/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="81">
+    <h2>Conan O’Brien</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: Emmy (1/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 25%;"></div>
+      <span class="tooltip">Emmy: 1997</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Conan O’Brien', 'Awards: Emmy (1/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="82">
+    <h2>Seth Meyers</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: Emmy (1/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 25%;"></div>
+      <span class="tooltip">Emmy: 2011</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Seth Meyers', 'Awards: Emmy (1/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="83">
+    <h2>Daniel Radcliffe</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: Grammy (1/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 25%;"></div>
+      <span class="tooltip">Grammy: 2012</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Daniel Radcliffe', 'Awards: Grammy (1/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="84">
+    <h2>Emma Watson</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: None (0/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 0%;"></div>
+      <span class="tooltip">No wins yet</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Emma Watson', 'Awards: None (0/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="85">
+    <h2>Rupert Grint</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: None (0/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 0%;"></div>
+      <span class="tooltip">No wins yet</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Rupert Grint', 'Awards: None (0/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="86">
+    <h2>Margot Robbie</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: None (0/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 0%;"></div>
+      <span class="tooltip">No wins yet</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Margot Robbie', 'Awards: None (0/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="87">
+    <h2>Chris Hemsworth</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: None (0/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 0%;"></div>
+      <span class="tooltip">No wins yet</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Chris Hemsworth', 'Awards: None (0/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="88">
+    <h2>Dwayne Johnson</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: None (0/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 0%;"></div>
+      <span class="tooltip">No wins yet</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Dwayne Johnson', 'Awards: None (0/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="89">
+    <h2>Vin Diesel</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: None (0/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 0%;"></div>
+      <span class="tooltip">No wins yet</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Vin Diesel', 'Awards: None (0/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="90">
+    <h2>Paul Rudd</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: None (0/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 0%;"></div>
+      <span class="tooltip">No wins yet</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Paul Rudd', 'Awards: None (0/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="91">
+    <h2>Mark Ruffalo</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: None (0/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 0%;"></div>
+      <span class="tooltip">No wins yet</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Mark Ruffalo', 'Awards: None (0/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="92">
+    <h2>Jeremy Renner</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: None (0/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 0%;"></div>
+      <span class="tooltip">No wins yet</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Jeremy Renner', 'Awards: None (0/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="93">
+    <h2>Chris Evans</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: None (0/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 0%;"></div>
+      <span class="tooltip">No wins yet</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Chris Evans', 'Awards: None (0/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="94">
+    <h2>Robert Downey Jr.</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: Oscar (1/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 25%;"></div>
+      <span class="tooltip">Oscar: 1993</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Robert Downey Jr.', 'Awards: Oscar (1/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="95">
+    <h2>Gwyneth Paltrow</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: Oscar (1/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 25%;"></div>
+      <span class="tooltip">Oscar: 1999</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Gwyneth Paltrow', 'Awards: Oscar (1/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="96">
+    <h2>Kate Winslet</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: Emmy, Grammy, Oscar (3/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 75%;"></div>
+      <span class="tooltip">Emmy: 2011, Grammy: 2000, Oscar: 2009</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Kate Winslet', 'Awards: Emmy, Grammy, Oscar (3/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="97">
+    <h2>Helen Mirren</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: Emmy, Oscar, Tony (3/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 75%;"></div>
+      <span class="tooltip">Emmy: 1996, Oscar: 2007, Tony: 2015</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Helen Mirren', 'Awards: Emmy, Oscar, Tony (3/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="98">
+    <h2>Maggie Smith</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: Emmy, Oscar (2/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 50%;"></div>
+      <span class="tooltip">Emmy: 2003, Oscar: 1970</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Maggie Smith', 'Awards: Emmy, Oscar (2/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="99">
+    <h2>Judi Dench</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: Oscar (1/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 25%;"></div>
+      <span class="tooltip">Oscar: 1999</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Judi Dench', 'Awards: Oscar (1/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="100">
+    <h2>Ian McKellen</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: None (0/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 0%;"></div>
+      <span class="tooltip">No wins yet</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Ian McKellen', 'Awards: None (0/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="101">
+    <h2>Patrick Stewart</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: None (0/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 0%;"></div>
+      <span class="tooltip">No wins yet</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Patrick Stewart', 'Awards: None (0/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="102">
+    <h2>Anthony Hopkins</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: Oscar, Emmy (2/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 50%;"></div>
+      <span class="tooltip">Oscar: 1992, Emmy: 1976</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Anthony Hopkins', 'Awards: Oscar, Emmy (2/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="103">
+    <h2>Morgan Freeman</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: Oscar (1/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 25%;"></div>
+      <span class="tooltip">Oscar: 2005</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Morgan Freeman', 'Awards: Oscar (1/4)')">Share</button>
+  </div>
+  <div class="artist" data-original-order="104">
+    <h2>Samuel L. Jackson</h2>
+    <input type="checkbox" class="compare-checkbox" onchange="updateCompareButton()">
+    <p>Awards: None (0/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 0%;"></div>
+      <span class="tooltip">No wins yet</span>
+    </div>
+    <button class="share-btn" onclick="shareOnTwitter('Samuel L. Jackson', 'Awards: None (0/4)')">Share</button>
+  </
