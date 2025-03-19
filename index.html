@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>EGOT Tracker</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background-color: #f5f5f5;
+    }
+    h1 {
+      text-align: center;
+      color: #333;
+    }
+    .artist {
+      border: 1px solid #ccc;
+      padding: 15px;
+      margin: 15px auto;
+      max-width: 500px;
+      background-color: #fff;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .artist:hover {
+      transform: scale(1.02);
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    }
+    .artist h2 {
+      margin: 0 0 10px 0;
+      color: #2c3e50;
+      font-size: 24px;
+      font-weight: bold;
+    }
+    .artist p {
+      margin: 5px 0;
+      color: #555;
+    }
+    .progress {
+      width: 200px;
+      height: 20px;
+      background: #e0e0e0;
+      border-radius: 5px;
+      overflow: hidden;
+      position: relative; /* For tooltip positioning */
+    }
+    .fill {
+      height: 100%;
+      background: #4caf50;
+      border-radius: 5px;
+    }
+    #searchBar {
+      width: 50%;
+      padding: 10px;
+      margin: 10px auto;
+      display: block;
+      font-size: 16px;
+      border: 2px solid #ccc;
+      border-radius: 5px;
+    }
+    #controls {
+      text-align: center;
+      margin: 20px 0;
+    }
+    #controls button {
+      padding: 8px 16px;
+      margin: 0 5px;
+      background-color: #4caf50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    #controls button:hover {
+      background-color: #45a049;
+    }
+    #filters {
+      margin-top: 10px;
+    }
+    #filters label {
+      margin: 0 10px;
+    }
+    .tooltip {
+      display: none;
+      position: absolute;
+      background-color: #333;
+      color: white;
+      padding: 5px 10px;
+      border-radius: 5px;
+      font-size: 12px;
+      top: -40px;
+      left: 50%;
+      transform: translateX(-50%);
+      white-space: nowrap;
+    }
+    .progress:hover .tooltip {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <h1>EGOT Tracker</h1>
+  <input type="text" id="searchBar" placeholder="Search for an artist..." onkeyup="searchArtists()">
+  
+  <div id="controls">
+    <button onclick="sortByProgress()">Sort by Progress</button>
+    <button onclick="sortByName()">Sort by Name</button>
+    <button onclick="resetOrder()">Reset Order</button>
+    <div id="filters">
+      <label><input type="checkbox" id="emmyFilter" onchange="filterArtists()"> Emmy</label>
+      <label><input type="checkbox" id="grammyFilter" onchange="filterArtists()"> Grammy</label>
+      <label><input type="checkbox" id="oscarFilter" onchange="filterArtists()"> Oscar</label>
+      <label><input type="checkbox" id="tonyFilter" onchange="filterArtists()"> Tony</label>
+    </div>
+  </div>
+
+  <!-- Artist List (First 10 shown; replace with your full 145 here) -->
+  <div class="artist" data-original-order="0">
+    <h2>John Legend</h2>
+    <p>Awards: Emmy, Grammy, Oscar, Tony (4/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 100%;"></div>
+      <span class="tooltip">Emmy: 2018, Grammy: 2006, Oscar: 2015, Tony: 2017</span>
+    </div>
+  </div>
+  <div class="artist" data-original-order="1">
+    <h2>Rita Moreno</h2>
+    <p>Awards: Emmy, Grammy, Oscar, Tony (4/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 100%;"></div>
+      <span class="tooltip">Emmy: 1977, Grammy: 1972, Oscar: 1961, Tony: 1975</span>
+    </div>
+  </div>
+  <div class="artist" data-original-order="2">
+    <h2>Viola Davis</h2>
+    <p>Awards: Emmy, Grammy, Oscar, Tony (4/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 100%;"></div>
+      <span class="tooltip">Emmy: 2015, Grammy: 2023, Oscar: 2016, Tony: 2010</span>
+    </div>
+  </div>
+  <div class="artist" data-original-order="3">
+    <h2>Elton John</h2>
+    <p>Awards: Emmy, Grammy, Oscar, Tony (4/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 100%;"></div>
+      <span class="tooltip">Emmy: 2024, Grammy: 1987, Oscar: 1994, Tony: 2000</span>
+    </div>
+  </div>
+  <div class="artist" data-original-order="4">
+    <h2>Lin-Manuel Miranda</h2>
+    <p>Awards: Emmy, Grammy, Tony (3/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 75%;"></div>
+      <span class="tooltip">Emmy: 2014, Grammy: 2016, Tony: 2016</span>
+    </div>
+  </div>
+  <div class="artist" data-original-order="5">
+    <h2>Cher</h2>
+    <p>Awards: Emmy, Grammy, Oscar (3/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 75%;"></div>
+      <span class="tooltip">Emmy: 2003, Grammy: 2000, Oscar: 1987</span>
+    </div>
+  </div>
+  <div class="artist" data-original-order="6">
+    <h2>Adele</h2>
+    <p>Awards: Emmy, Grammy, Oscar (3/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 75%;"></div>
+      <span class="tooltip">Emmy: 2022, Grammy: 2012, Oscar: 2013</span>
+    </div>
+  </div>
+  <div class="artist" data-original-order="7">
+    <h2>Cynthia Erivo</h2>
+    <p>Awards: Emmy, Grammy, Tony (3/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 75%;"></div>
+      <span class="tooltip">Emmy: 2017, Grammy: 2017, Tony: 2016</span>
+    </div>
+  </div>
+  <div class="artist" data-original-order="8">
+    <h2>Nicki Minaj</h2>
+    <p>Awards: None (0/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 0%;"></div>
+      <span class="tooltip">No wins yet</span>
+    </div>
+  </div>
+  <div class="artist" data-original-order="9">
+    <h2>Rihanna</h2>
+    <p>Awards: Grammy (1/4)</p>
+    <div class="progress">
+      <div class="fill" style="width: 25%;"></div>
+      <span class="tooltip">Grammy: 2010</span>
+    </div>
+  </div>
+  <!-- Replace this comment with your full 145-artist list from the previous script -->
+
+  <script>
+    // Store original order
+    let originalArtists = Array.from(document.getElementsByClassName("artist"));
+
+    function searchArtists() {
+      let input = document.getElementById("searchBar").value.toLowerCase();
+      filterArtists(input);
+    }
+
+    function filterArtists(searchTerm = "") {
+      let artists = document.getElementsByClassName("artist");
+      let emmyChecked = document.getElementById("emmyFilter").checked;
+      let grammyChecked = document.getElementById("grammyFilter").checked;
+      let oscarChecked = document.getElementById("oscarFilter").checked;
+      let tonyChecked = document.getElementById("tonyFilter").checked;
+
+      for (let i = 0; i < artists.length; i++) {
+        let artistName = artists[i].getElementsByTagName("h2")[0].textContent.toLowerCase();
+        let awards = artists[i].getElementsByTagName("p")[0].textContent.toLowerCase();
+        let matchesSearch = searchTerm === "" || artistName.includes(searchTerm);
+        let matchesFilter = (!emmyChecked || awards.includes("emmy")) &&
+                            (!grammyChecked || awards.includes("grammy")) &&
+                            (!oscarChecked || awards.includes("oscar")) &&
+                            (!tonyChecked || awards.includes("tony"));
+
+        if (matchesSearch && matchesFilter) {
+          artists[i].style.display = "block";
+        } else {
+          artists[i].style.display = "none";
+        }
+      }
+    }
+
+    function sortByProgress() {
+      let artists = Array.from(document.getElementsByClassName("artist"));
+      artists.sort((a, b) => {
+        let aProgress = parseInt(a.querySelector(".fill").style.width) || 0;
+        let bProgress = parseInt(b.querySelector(".fill").style.width) || 0;
+        return bProgress - aProgress;
+      });
+      let container = document.body;
+      artists.forEach(artist => container.appendChild(artist));
+    }
+
+    function sortByName() {
+      let artists = Array.from(document.getElementsByClassName("artist"));
+      artists.sort((a, b) => a.querySelector("h2").textContent.localeCompare(b.querySelector("h2").textContent));
+      let container = document.body;
+      artists.forEach(artist => container.appendChild(artist));
+    }
+
+    function resetOrder() {
+      let artists = originalArtists.slice();
+      let container = document.body;
+      artists.forEach(artist => container.appendChild(artist));
+      filterArtists(document.getElementById("searchBar").value.toLowerCase());
+    }
+  </script>
+</body>
+</html>
